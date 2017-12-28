@@ -17,7 +17,8 @@ On Linux or Unix (MacOS) based systems:
 
 ```
 Usage: svg-to-jsx.rb <source_path> <output_path> [options]
-	-r, --[no-]recursive             Whether to search for files inside subfolders or not.
+	-r, --[no-]recursive             Whether to search for files inside subfolders or not. (False by default)
+	-p, --[non-]pure                 Export as JSX pure functional components using recompose. (False by default)
 	-h, --help                       Show this help message
 ```
 

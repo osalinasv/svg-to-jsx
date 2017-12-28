@@ -13,6 +13,109 @@ rescue Gem::LoadError
 	nokogiri-pretty`
 end
 
+# Main program
+
+class Main
+	EXT = ".svg"
+
+	def initialize()
+		@source_path = ""
+		@output_path = ""
+		
+		@options = {
+			resursive: false,
+			pure: false
+		}
+	end
+
+	def run
+		exit! if !option_parser()
+
+		source_path_exists = FileHelper.directory_exists?(@source_path)
+	
+		raise "\nSource directory not found or does not exists" unless source_path_exists
+		
+		unless FileHelper.directory_exists?(@output_path)
+			FileUtils.mkdir_p(@output_path)
+		end
+		
+		output_path_exists = FileHelper.directory_exists?(@output_path)
+		
+		raise "\nOutput directory does not exist or could not be created due to permission errors" unless output_path_exists
+		
+		files_array = FileHelper.list_all_files_in_dir(@source_path, @options[:recursive], EXT)
+		
+		puts "\nFiles found: #{files_array.length}\n\n"
+		
+		process_all_files(files_array)
+	end
+
+	def option_parser
+		ARGV << "-h" if ARGV.empty?
+
+		op = OptionParser.new do |parser|
+			parser.banner = "Usage: svg-to-jsx.rb <source_path> <output_path> [options]"
+		
+			parser.on("-r", "--[no-]recursive", "Whether to search for files inside subfolders or not. (False by default)") do |value|
+				@options[:recursive] = true
+			end
+		
+			parser.on("-p", "--[non-]pure", "Export as JSX pure functional components using recompose. (False by default)") do |value|
+				@options[:pure] = true
+			end
+		
+			parser.on("-h", "--help", "Show this help message") do ||
+				puts "\n #{parser}"
+				exit!
+			end
+		end
+		
+		op.parse!
+
+		@source_path = FileHelper.parse_directory_argument(ARGV[0])
+		@output_path = FileHelper.parse_directory_argument(ARGV[1])
+		
+		raise "\nNo source path input" unless @source_path
+		raise "\nNo output path input" unless @output_path
+
+		return true
+	end
+
+	def process_all_files(files_array)
+		file_name = ''
+		capitalized_name = ''
+		full_path = ''
+		
+		files_array.each do |file_path|
+			file_name = FileHelper.get_file_name(file_path, EXT)
+			capitalized_name = SVGtoJSX.string_to_CamelCase(file_name) + "Icon";
+		
+			full_path = "#{@output_path}/#{capitalized_name}.js"
+		
+			write_jsx_file(file_path, full_path, capitalized_name, @options[:pure])
+		end
+	end
+
+	def write_jsx_file(file_path, full_path, capitalized_name, pure)
+		svg_file_path = FileHelper.parse_directory_argument(file_path)
+		new_file_path = FileHelper.parse_directory_argument(full_path)
+	
+		if FileHelper.file_exists?(new_file_path)
+			File.delete(new_file_path)
+		end
+	
+		new_file = File.open(new_file_path, "w")
+	
+		puts "Created new file: #{capitalized_name}.js"
+		content = XMLFormatter.process_xml_file(svg_file_path)
+	
+		jsx = SVGtoJSX.parse_to_jsx_component(capitalized_name, content, pure)
+	
+		new_file.write(jsx)
+		new_file.close()
+	end
+end
+
 # Methods
 
 class FileHelper
@@ -61,7 +164,7 @@ class XMLFormatter
 	end
 
 	def self.strip_xml_header(content)
-		content.sub('<?xml version="1.0" encoding="ISO-8859-1"?>', "")
+		content.sub(/<\?xml(.)+>/, "")
 	end
 
 	def self.process_xml_file(file_path)
@@ -136,87 +239,7 @@ JSX
 	end
 end
 
-def write_jsx_file(file_path, full_path, capitalized_name, pure)
-	svg_file_path = FileHelper.parse_directory_argument(file_path)
-	new_file_path = FileHelper.parse_directory_argument(full_path)
+# Main program execution
 
-	if FileHelper.file_exists?(new_file_path)
-		File.delete(new_file_path)
-	end
-
-	new_file = File.open(new_file_path, "w")
-
-	puts "Created new file: #{capitalized_name}.js"
-	content = XMLFormatter.process_xml_file(svg_file_path)
-
-	jsx = SVGtoJSX.parse_to_jsx_component(capitalized_name, content, pure)
-
-	new_file.write(jsx)
-	new_file.close()
-end
-
-# Main program
-
-EXT = ".svg"
-
-source_path = ""
-output_path = ""
-
-options = {
-	resursive: false,
-	pure: false
-}
-
-op = OptionParser.new do |parser|
-	parser.banner = "Usage: svg-to-jsx.rb <source_path> <output_path> [options]"
-
-	parser.on("-r", "--[no-]recursive", "Whether to search for files inside subfolders or not. (False by default)") do |value|
-		options[:recursive] = true
-	end
-
-	parser.on("-p", "--[non-]pure", "Export as JSX pure functional components using recompose. (False by default)") do |value|
-		options[:pure] = true
-	end
-
-	parser.on("-h", "--help", "Show this help message") do ||
-		puts "\n #{parser}"
-		exit!
-	end
-end
-
-op.parse!
-
-source_path = FileHelper.parse_directory_argument(ARGV[0])
-output_path = FileHelper.parse_directory_argument(ARGV[1])
-
-raise "\nNo source path input" unless source_path
-raise "\nNo output path input" unless output_path
-
-source_path_exists = FileHelper.directory_exists?(source_path)
-
-raise "\nSource directory not found or does not exists" unless source_path_exists
-
-unless FileHelper.directory_exists?(output_path)
-	FileUtils.mkdir_p(output_path)
-end
-
-output_path_exists = FileHelper.directory_exists?(output_path)
-
-raise "\nOutput directory does not exist or could not be created due to permission errors" unless output_path_exists
-
-files_array = FileHelper.list_all_files_in_dir(source_path, options[:recursive], EXT)
-
-puts "\nFiles found: #{files_array.length}\n\n"
-
-file_name = ''
-capitalized_name = ''
-full_path = ''
-
-files_array.each do |file_path|
-	file_name = FileHelper.get_file_name(file_path, EXT)
-	capitalized_name = SVGtoJSX.string_to_CamelCase(file_name) + "Icon";
-
-	full_path = "#{output_path}/#{capitalized_name}.js"
-
-	write_jsx_file(file_path, full_path, capitalized_name, options[:pure])
-end
+main = Main.new()
+main.run()

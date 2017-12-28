@@ -184,35 +184,41 @@ class XMLFormatter
 end
 
 class SVGtoJSX
-	TEMPLATE_REACT = "import React from 'react';\n"
+	TEMPLATE_REACT = "import React from 'react';\nimport classNames from 'classnames';\n"
 	TEMPLATE_RECOMPOSE = "import { pure } from 'recompose';\n"
 
 	TEMPLATE = <<-JSX
 
 import "./Icon.css";
 
-const %{name} = ({ ...props }) => (
-	<div className="Icon">
+const %{name} = ({ className, ...props }) => (
+	<div className={ classNames('Icon', '%{hyphen_name}', className) }>
 %{content}
 	</div>
 );
 JSX
 
-	def self.string_to_CamelCase(string)
+	def self.string_to_CamelCase(str)
 		final = ""
 
-		if string.include?("_")
-			final = string.split("_").collect(&:capitalize).join
-		elsif string.include?("-")
-			final = string.split("-").collect(&:capitalize).join
+		if str.include?("_")
+			final = str.split("_").collect(&:capitalize).join
+		elsif str.include?("-")
+			final = str.split("-").collect(&:capitalize).join
 		else
-			final = string.capitalize
+			final = str.capitalize
 		end
 
 		return final
 	end
 
+	def self.string_to_hypenized(str)
+		hyphen = "" << str
+		return hyphen.gsub!(/([^A-Z])([A-Z]+)/,'\1-\2').downcase!
+	end
+
 	def self.parse_to_jsx_component(name, content, pure)
+		hyphen_name = string_to_hypenized(name)
 		tabbed_content = ""
 
 		content.each_line do |line|
@@ -226,7 +232,7 @@ JSX
 			jsx_template << TEMPLATE_RECOMPOSE
 		end
 
-		jsx_template << TEMPLATE % { name: name, content: tabbed_content }
+		jsx_template << TEMPLATE % { name: name, content: tabbed_content, hyphen_name: hyphen_name }
 
 		if pure
 			jsx_template << "\nconst Pure#{name} = pure(#{name});\n"

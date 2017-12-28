@@ -1,2 +1,2 @@
 @echo off
-ruby svg-to-jsx.rb %*
+ruby "%~dp0/svg-to-jsx.rb" %*

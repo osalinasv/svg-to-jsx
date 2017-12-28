@@ -1,12 +1,12 @@
 # svg-to-jsx
-Small opinionated personal tool to convert from SVG files to JSX functional components.
+Small opinionated personal tool to convert from SVG files to React JSX functional components. The tool asumes that the target JSX syntax supports ES6. SVGtoJSX was primarily designed to batch export svg icons to embedded SVG React components, so by default all exported files have the sufix "Icon" (Right now this is not optional).
 
 ## Prerequisites
-This tool is developed with Ruby (Rails is not required). So go ahead and download Ruby from
-[the official](https://www.ruby-lang.org/en/). If you have trouble visit Ruby's
-[own installation guide](https://www.ruby-lang.org/en/downloads/).
+SVGtoJSX was developed with Ruby. So go ahead and download Ruby from
+[the official site](https://www.ruby-lang.org/en/). If you have trouble visit Ruby's
+[own installation guide](https://www.ruby-lang.org/en/downloads/)
 
-This tool uses a couple ruby gems for XML parsing and formatting. Run and install the following global gems:
+This tool uses a couple ruby gems for XML parsing and formatting. Run the following command to install them:
 
 ```
 $ gem install nokogiri nokogiri-pretty
